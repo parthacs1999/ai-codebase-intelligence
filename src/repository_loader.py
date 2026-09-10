@@ -39,10 +39,3 @@ def read_file(file_path):
             }
     except UnicodeDecodeError:
         return None
-
-
-files = load_repository("../sample_repo")
-
-for file in files:
-    data = read_file(file)
-    print(data)

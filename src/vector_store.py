@@ -28,7 +28,7 @@ def add_chunks(collection, chunks):
 
     embeddings = chunk_embeddings.tolist()
 
-    collection.add(
+    collection.upsert(
         ids=ids, documents=documents, embeddings=embeddings, metadatas=metadatas
     )
 
@@ -39,3 +39,7 @@ def search(collection, query, top_k=3):
     return collection.query(
         query_embeddings=[query_embedding.tolist()], n_results=top_k
     )
+
+
+def delete_file_chunks(collection, file_path):
+    collection.delete(where={"file_path": file_path})
