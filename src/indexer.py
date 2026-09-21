@@ -1,5 +1,5 @@
 from repository_loader import load_repository, read_file
-from chunker import chunk_code
+from chunker import smart_chunk_code
 from vector_store import add_chunks, get_collection, delete_file_chunks
 
 
@@ -18,7 +18,7 @@ def index_repository(repo_path):
 
         delete_file_chunks(collection, file_path)
 
-        chunk_data = chunk_code(file_data)
+        chunk_data = smart_chunk_code(file_data)
 
         add_chunks(collection, chunk_data)
 
