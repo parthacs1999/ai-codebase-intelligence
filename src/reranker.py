@@ -21,19 +21,5 @@ def rerank(query, results, top_k=3):
                 "metadata": result["metadata"],
             }
         )
-
     scored_results.sort(key=lambda x: x["reranker_score"], reverse=True)
-
-    for result, score in zip(results, scores):
-        print("\n--------------------")
-        print("Score:", float(score))
-        print("File:", result["metadata"]["file_path"])
-        print(
-            "Lines:",
-            result["metadata"]["start_line"],
-            "-",
-            result["metadata"]["end_line"],
-        )
-        print(result["content"])
-
     return scored_results[:top_k]
