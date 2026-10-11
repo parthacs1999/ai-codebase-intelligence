@@ -1,37 +1,51 @@
 import os
 import time
+import random
 
 from dotenv import load_dotenv
 from google import genai
-from google.genai.errors import ServerError
+from google.genai.errors import ClientError, ServerError
+
 
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client(
+    api_key=os.getenv("GEMINI_API_KEY")
+)
 
 
-def generate_answer(prompt, max_retries=3):
-
+def generate_answer(prompt, max_retries=4):
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
-                model="gemini-3.6-flash",
-                contents=prompt,
+                model="gemini-3.5-flash-lite",
+                contents=prompt
             )
 
             return response.text
 
-        except ServerError as error:
+        except (ClientError, ServerError) as error:
+            status = getattr(error, "code", None)
 
-            if error.code == 503:
-                if attempt < max_retries - 1:
-                    wait_time = 2**attempt
-                    print(f"Gemini unavailable. " f"Retrying in {wait_time}s...")
-                    time.sleep(wait_time)
-                else:
-                    return (
-                        "Gemini is temporarily unavailable. " "Please try again later."
-                    )
+            if status is None:
+                status = getattr(error, "status_code", None)
 
-            else:
+            if status not in (429, 503):
                 raise
+
+            if attempt == max_retries - 1:
+                raise
+
+            wait_time = min(
+                30,
+                (2 ** attempt) * 5 + random.uniform(0, 1)
+            )
+
+            print(
+                f"Gemini returned {status}. "
+                f"Retrying in {wait_time:.1f}s..."
+            )
+
+            time.sleep(wait_time)
+
+    raise RuntimeError("Gemini request failed")

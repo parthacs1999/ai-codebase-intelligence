@@ -28,12 +28,12 @@ def prepare_retrieval(repo_path):
     return collection, bm25, all_chunks
 
 
-def answer_question(question, collection, bm25, chunks):
+def answer_question(question, collection, bm25, chunks, agent_type="architect"):
     search_results = hybrid_search(question, collection, bm25, chunks)
 
     context = build_context(search_results)
 
-    prompt = build_prompt(question, context)
+    prompt = build_prompt(question, context, agent_type)
 
     answer = generate_answer(prompt)
 
@@ -55,35 +55,29 @@ def answer_question(question, collection, bm25, chunks):
 
     return {
         "question": question,
+        "agent": agent_type,
         "answer": answer,
         "sources": sources,
     }
 
 
 if __name__ == "__main__":
-    REPO_PATH = "sample_repo"
+    collection, bm25, chunks = prepare_retrieval("sample_repo")
 
-    collection, bm25, chunks = prepare_retrieval(REPO_PATH)
+    result = answer_question(
+        "Explain the authentication architecture of this repository.",
+        collection,
+        bm25,
+        chunks,
+        agent_type="architect"
+    )
 
-    question = "How does this application use JWT tokens for authentication?"
-
-    result = answer_question(question, collection, bm25, chunks)
-
-    print("\n" + "=" * 60)
-
-    print("\nQUESTION:")
-    print(result["question"])
-
-    print("\nANSWER:")
-    print(result["answer"])
+    print("\nAGENT:", result["agent"])
+    print("\nANSWER:\n", result["answer"])
 
     print("\nSOURCES:")
-
-    for i, source in enumerate(result["sources"], start=1):
-        print(f"\nSource {i}")
-        print(f"File: {source['file_path']}")
-        print(f"Type: {source['chunk_type']}")
-        print(f"Symbol: {source['symbol_name']}")
-        print(f"Lines: {source['start_line']}-{source['end_line']}")
-
-    print("\n" + "=" * 60)
+    for source in result["sources"]:
+        print(
+            f"{source['file_path']} "
+            f"({source['start_line']}-{source['end_line']})"
+        )
