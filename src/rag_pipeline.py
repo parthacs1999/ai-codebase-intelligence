@@ -29,7 +29,7 @@ def prepare_retrieval(repo_path):
 
 
 def answer_question(question, collection, bm25, chunks, agent_type="architect"):
-    search_results = hybrid_search(question, collection, bm25, chunks)
+    search_results = hybrid_search(question, collection, bm25, chunks, top_k=6)
 
     context = build_context(search_results)
 

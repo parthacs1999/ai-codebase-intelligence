@@ -19,54 +19,37 @@ def cosine_similarity(a, b):
     return dot / (np.linalg.norm(a) * np.linalg.norm(b))
 
 
-file_path = "sample_repo/auth.py"
+if __name__ == "__main__":
+    file_path = "sample_repo/auth.py"
 
-document = read_file(file_path)
-chunks = chunk_code(document)
-chunk_texts = [chunk["content"] for chunk in chunks]
+    document = read_file(file_path)
+    chunks = chunk_code(document)
+    chunk_texts = [chunk["content"] for chunk in chunks]
 
-chunk_embeddings = model.encode(chunk_texts)
-print(chunk_embeddings.shape)
+    chunk_embeddings = model.encode(chunk_texts)
+    print(chunk_embeddings.shape)
 
-query = "Where is user authentication implemented?"
+    query = "Where is user authentication implemented?"
 
-query_embedding = model.encode(query)
+    query_embedding = model.encode(query)
 
-similarities = []
+    similarities = []
 
-for i in range(len(chunk_texts)):
-    similarities.append(cosine_similarity(chunk_embeddings[i], query_embedding))
+    for i in range(len(chunk_texts)):
+        similarities.append(cosine_similarity(chunk_embeddings[i], query_embedding))
 
+    sorted_indices = np.argsort(similarities)[::-1]
 
-sorted_indices = np.argsort(similarities)[::-1]
+    for idx in sorted_indices[:3]:
+        chunk = chunks[idx]
+        score = similarities[idx]
 
-for idx in sorted_indices[:3]:
-    chunk = chunks[idx]
-    score = similarities[idx]
+        print(
+            f"Chunk {idx}: "
+            f"{score:.4f} "
+            f"lines {chunk['metadata']['start_line']}-"
+            f"{chunk['metadata']['end_line']}"
+        )
 
-    print(
-        f"Chunk {idx}: "
-        f"{score:.4f} "
-        f"lines {chunk['metadata']['start_line']}-"
-        f"{chunk['metadata']['end_line']}"
-    )
-
-    print(chunk["content"])
-    print()
-
-# best_index = np.argmax(similarities)
-# best_chunk = chunks[best_index]
-# print(best_chunk["content"])
-# print(best_chunk["metadata"])
-
-# similarity_01 = cosine_similarity(embeddings[0], embeddings[1])
-
-# similarity_02 = cosine_similarity(embeddings[0], embeddings[2])
-
-# print("Login vs password:", similarity_01)
-# print("Login vs shipping:", similarity_02)
-
-# print(embeddings.shape)
-# print(embeddings[0][:10])
-# print(embeddings[1][:10])
-# print(embeddings[2][:10])
+        print(chunk["content"])
+        print()
