@@ -169,6 +169,9 @@ def answer_question(
             "chunk_type": metadata.get(
                 "chunk_type", "Unknown"
             ),
+            "language": metadata.get(
+                "language", "text"
+            ),
             "start_line": metadata.get(
                 "start_line", "Unknown"
             ),
@@ -177,7 +180,8 @@ def answer_question(
             ),
             "reranker_score": result.get(
                 "reranker_score"
-            )
+            ),
+            "content": result["content"]
         })
 
     return {
@@ -225,5 +229,6 @@ if __name__ == "__main__":
         print(
             f"[Source {source['source_id']}] "
             f"{source['file_path']} "
-            f"({source['start_line']}-{source['end_line']})"
+            f"({source['start_line']}-{source['end_line']}) "
+            f"Content length: {len(source['content'])}"
         )

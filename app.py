@@ -5,14 +5,14 @@ os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 
 import sys
-import hashlib
+import html
 from pathlib import Path
 
 import streamlit as st
 
 
 st.set_page_config(
-    page_title="Codebase Intelligence | AI Repository Analysis",
+    page_title="Codebase AI | Developer Workspace",
     page_icon="◈",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -26,15 +26,22 @@ from repository_index import index_repository
 from agent_router import route_question
 
 
+DEMO_REPOSITORY = "https://github.com/pallets/itsdangerous"
+
 AGENTS = {
     "Architect": {
         "id": "architect",
         "icon": "◈",
-        "description": "Architecture, dependencies and execution flows",
+        "description": "Architecture, dependencies and execution flow",
         "prompts": [
-            "Explain the overall architecture of this repository.",
-            "What are the most important modules and how do they interact?",
-            "Trace the execution flow from the main entry point."
+            "Explain the architecture of this repository.",
+            "How do the main modules interact?",
+            "Trace the main execution flow."
+        ],
+        "demo_prompts": [
+            "How do Serializer and Signer work together?",
+            "Explain the architecture of the itsdangerous library.",
+            "How does Serializer.loads() verify signed data?"
         ]
     },
     "Code Reviewer": {
@@ -42,19 +49,29 @@ AGENTS = {
         "icon": "◇",
         "description": "Security, correctness and maintainability",
         "prompts": [
-            "Review this repository for potential security risks.",
-            "Identify maintainability issues and code smells.",
-            "Which parts of this codebase need better error handling?"
+            "Review this repository for security risks.",
+            "Identify maintainability problems.",
+            "Which functions need better error handling?"
+        ],
+        "demo_prompts": [
+            "Review signature verification for security risks.",
+            "How does the library prevent signature tampering?",
+            "Review exception handling in Signer.unsign()."
         ]
     },
     "Bug Finder": {
         "id": "bug_finder",
         "icon": "⌁",
-        "description": "Failure conditions, edge cases and debugging",
+        "description": "Bugs, edge cases and failure conditions",
         "prompts": [
-            "Identify potential bugs and edge cases in this repository.",
-            "Which functions are most likely to fail on unexpected inputs?",
-            "Find potential issues in exception handling."
+            "Find potential bugs and edge cases.",
+            "What inputs could cause failures?",
+            "Identify possible exception-handling issues."
+        ],
+        "demo_prompts": [
+            "What edge cases can cause Signer.unsign() to fail?",
+            "What happens when a signed value is tampered with?",
+            "What errors can occur during signature verification?"
         ]
     },
     "Documentation": {
@@ -62,50 +79,52 @@ AGENTS = {
         "icon": "▤",
         "description": "Technical documentation and API explanations",
         "prompts": [
-            "Generate an overview of the main components.",
-            "Document the most important classes and functions.",
-            "Create an onboarding guide for a new developer."
+            "Document the main classes and functions.",
+            "Explain the public API.",
+            "Create a developer onboarding guide."
+        ],
+        "demo_prompts": [
+            "Document the Signer class and its methods.",
+            "Explain how to use Serializer.dumps() and loads().",
+            "Write a developer guide for signing and verifying data."
         ]
     }
+}
+
+
+LANGUAGES = {
+    "python": "python",
+    "javascript": "javascript",
+    "typescript": "typescript",
+    "java": "java",
+    "cpp": "cpp",
+    "c++": "cpp",
+    "go": "go",
+    "py": "python",
+    "js": "javascript",
+    "ts": "typescript",
+    "cc": "cpp",
+    "cxx": "cpp",
+    "hpp": "cpp"
 }
 
 
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
-    :root {
-        --background: #0b0e14;
-        --surface: #111620;
-        --surface-hover: #192130;
-        --border: #252d3b;
-        --text: #e9edf5;
-        --muted: #8e9aae;
-        --accent: #8b9dff;
-    }
-
-    html, body, [class*="css"], [data-testid="stApp"] {
-        font-family: 'DM Sans', sans-serif;
-    }
-
     .stApp {
         background: #0b0e14;
-        color: #e9edf5;
+        color: #edf1f8;
     }
 
     [data-testid="stSidebar"] {
         background: #10151e;
-        border-right: 1px solid #252d3b;
-    }
-
-    [data-testid="stSidebar"] > div:first-child {
-        padding-top: 1.6rem;
+        border-right: 1px solid #242c39;
     }
 
     .block-container {
-        max-width: 1180px;
-        padding-top: 2.2rem;
+        max-width: 1380px;
+        padding-top: 1.5rem;
         padding-bottom: 5rem;
     }
 
@@ -113,279 +132,210 @@ st.markdown(
         letter-spacing: -0.035em;
     }
 
-    h1 {
-        font-weight: 700;
-    }
-
     .brand {
         display: flex;
         align-items: center;
         gap: 12px;
-        margin-bottom: 8px;
+        margin-bottom: 18px;
     }
 
-    .brand-mark {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #768aff, #a58bff);
-        color: #ffffff;
-        font-size: 26px;
+    .brand-icon {
+        background: #8794f5;
+        color: #101525;
+        border-radius: 11px;
+        padding: 10px 13px;
+        font-size: 24px;
         font-weight: 700;
     }
 
-    .brand-name {
-        color: #f0f3fa;
+    .brand-title {
         font-size: 19px;
-        font-weight: 700;
-        letter-spacing: -0.6px;
+        font-weight: 750;
+        color: #f1f4fc;
     }
 
     .brand-subtitle {
-        color: #8491a7;
         font-size: 12px;
-        margin-top: 2px;
+        color: #8e9aaf;
     }
 
     .eyebrow {
-        color: #9aabff;
-        text-transform: uppercase;
-        letter-spacing: 2px;
+        color: #93a4ff;
         font-size: 11px;
         font-weight: 700;
-        margin-bottom: 12px;
+        letter-spacing: 1.8px;
+        text-transform: uppercase;
     }
 
-    .hero-title {
-        font-size: clamp(32px, 4vw, 48px);
+    .landing-title {
+        font-size: clamp(36px, 5vw, 58px);
+        font-weight: 750;
+        letter-spacing: -2px;
         line-height: 1.12;
-        font-weight: 700;
-        letter-spacing: -1.8px;
-        color: #f2f5fc;
-        margin-bottom: 14px;
+        margin: 18px 0;
     }
 
-    .hero-accent {
-        background: linear-gradient(90deg, #94a7ff, #c4a1ff);
+    .gradient-text {
+        background: linear-gradient(90deg, #91a4ff, #c7a0ff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
 
-    .hero-description {
-        color: #9ca8ba;
-        font-size: 15px;
-        line-height: 1.8;
-        max-width: 680px;
-        margin-bottom: 24px;
-    }
-
-    .status-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border: 1px solid #2c4d40;
-        background: #13251e;
-        color: #82d9ac;
-        padding: 7px 12px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .status-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: #73dba3;
-    }
-
-    .metric-card {
-        border: 1px solid #252d3b;
-        border-radius: 14px;
-        background: #111620;
-        padding: 20px;
-        min-height: 108px;
-    }
-
-    .metric-label {
-        color: #8c9aaf;
-        font-size: 12px;
-        margin-bottom: 10px;
-    }
-
-    .metric-value {
-        color: #f0f3fa;
-        font-size: 26px;
-        font-weight: 700;
-        letter-spacing: -0.7px;
-    }
-
-    .metric-detail {
-        color: #738199;
-        font-size: 11px;
-        margin-top: 6px;
-    }
-
-    .section-heading {
-        color: #f0f3fa;
-        font-size: 20px;
-        font-weight: 700;
-        letter-spacing: -0.5px;
-        margin-bottom: 4px;
-    }
-
-    .section-subtitle {
-        color: #8795aa;
-        font-size: 13px;
-        margin-bottom: 18px;
-    }
-
-    .agent-card {
-        border: 1px solid #283245;
-        background: #111620;
-        border-radius: 13px;
-        padding: 17px 16px;
-        min-height: 122px;
-    }
-
-    .agent-card.active {
-        border-color: #8394f5;
-        background: #192038;
-    }
-
-    .agent-icon {
-        font-size: 25px;
-        color: #a5b1ff;
-        margin-bottom: 10px;
-    }
-
-    .agent-title {
+    .muted {
+        color: #96a3b7;
         font-size: 14px;
-        font-weight: 700;
-        color: #eef2fa;
-        margin-bottom: 5px;
+        line-height: 1.8;
     }
 
-    .agent-description {
-        color: #8794a8;
-        font-size: 11px;
-        line-height: 1.5;
+    .workspace-title {
+        color: #f2f5fc;
+        font-size: 26px;
+        font-weight: 750;
+        letter-spacing: -0.8px;
     }
 
-    .workspace-label {
-        color: #8d9ab0;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1.4px;
-        margin-bottom: 12px;
+    .workspace-subtitle {
+        color: #8e9bb0;
+        font-size: 13px;
+        margin-top: 4px;
     }
 
-    .repository-box {
-        border: 1px solid #283245;
-        border-radius: 12px;
-        padding: 14px;
+    .repo-panel {
+        border: 1px solid #2a3446;
         background: #151c29;
-        margin-top: 12px;
+        padding: 15px;
+        border-radius: 12px;
+        margin: 14px 0;
         overflow-wrap: anywhere;
     }
 
-    .repository-name {
-        color: #e5ebfa;
-        font-size: 13px;
-        font-weight: 600;
+    .repo-name {
+        font-weight: 700;
+        color: #eef2fa;
+        font-size: 14px;
     }
 
-    .repository-path {
-        color: #8492a8;
+    .repo-url {
+        color: #8997ab;
         font-size: 11px;
-        margin-top: 6px;
-        line-height: 1.5;
+        margin-top: 7px;
     }
 
-    .chat-heading {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+    .status {
+        display: inline-block;
+        background: #15271f;
+        border: 1px solid #2b5140;
+        border-radius: 20px;
+        padding: 6px 11px;
+        color: #83d8ab;
+        font-size: 11px;
+        font-weight: 650;
+    }
+
+    .demo-badge {
+        display: inline-block;
+        background: #1c2140;
+        border: 1px solid #4855a0;
+        border-radius: 20px;
+        padding: 6px 11px;
+        color: #aab7ff;
+        font-size: 11px;
+        font-weight: 650;
+    }
+
+    .section-label {
+        color: #8d9ab0;
+        text-transform: uppercase;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.3px;
+        margin: 15px 0 10px;
+    }
+
+    .stat-panel {
+        border: 1px solid #263044;
+        background: #121823;
+        padding: 17px;
+        border-radius: 12px;
+    }
+
+    .stat-number {
+        color: #f1f4fc;
+        font-size: 25px;
+        font-weight: 750;
+    }
+
+    .stat-label {
+        color: #8e9bb0;
+        font-size: 11px;
+        margin-top: 5px;
+    }
+
+    .welcome-card {
+        border: 1px solid #34426b;
+        background: linear-gradient(
+            135deg,
+            #171e34,
+            #121824
+        );
+        border-radius: 14px;
+        padding: 26px;
+        margin-top: 24px;
         margin-bottom: 12px;
     }
 
-    .prompt-heading {
-        color: #8794a8;
-        font-size: 12px;
-        font-weight: 600;
-        margin: 18px 0 10px;
-    }
-
-    .source-heading {
-        color: #b4c0d5;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .footer-note {
-        color: #69788f;
-        font-size: 11px;
-        text-align: center;
-        margin-top: 38px;
-        padding-top: 18px;
-        border-top: 1px solid #252d3b;
+    .welcome-title {
+        color: #f0f3fb;
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 10px;
     }
 
     .stButton > button {
-        border-radius: 10px;
+        border: 1px solid #303a4e;
+        border-radius: 9px;
         font-weight: 600;
-        border: 1px solid #303a4d;
-        transition: all 0.15s ease;
-    }
-
-    .stButton > button:hover {
-        border-color: #8394f5;
     }
 
     .stButton > button[kind="primary"] {
-        background: #8293ef;
-        border-color: #8293ef;
-        color: #0c1020;
+        background: #8796ef;
+        border-color: #8796ef;
+        color: #0d1321;
     }
 
     .stButton > button[kind="primary"]:hover {
-        background: #9cafff;
-        border-color: #9cafff;
-        color: #0c1020;
+        background: #a1afff;
+        border-color: #a1afff;
+        color: #0d1321;
     }
 
     [data-testid="stChatMessage"] {
-        background: #111620;
-        border: 1px solid #252d3b;
-        border-radius: 14px;
+        border: 1px solid #263044;
+        background: #111722;
+        border-radius: 13px;
         padding: 16px;
-        margin-bottom: 14px;
-    }
-
-    [data-testid="stChatInput"] {
-        border-radius: 14px;
+        margin-bottom: 12px;
     }
 
     [data-testid="stExpander"] {
-        border: 1px solid #293245;
-        border-radius: 10px;
-        background: #111620;
-    }
-
-    [data-testid="stCodeBlock"] {
+        border: 1px solid #2a3446;
+        background: #111722;
         border-radius: 10px;
     }
 
-    div[data-testid="stHorizontalBlock"] {
-        align-items: stretch;
+    [data-testid="stChatInput"] {
+        border-radius: 12px;
+    }
+
+    .footer {
+        color: #69788e;
+        font-size: 11px;
+        padding-top: 18px;
+        text-align: center;
     }
 
     hr {
-        border-color: #252d3b;
+        border-color: #263044;
     }
     </style>
     """,
@@ -399,12 +349,13 @@ def initialize_state():
         "collection": None,
         "bm25": None,
         "chunks": None,
-        "history": [],
         "indexed": False,
         "file_count": 0,
+        "history": [],
         "selected_agent": "Architect",
         "pending_question": None,
-        "repository_error": None
+        "show_explorer": False,
+        "demo_mode": False
     }
 
     for key, value in defaults.items():
@@ -417,14 +368,15 @@ def clear_repository():
     st.session_state.collection = None
     st.session_state.bm25 = None
     st.session_state.chunks = None
-    st.session_state.history = []
     st.session_state.indexed = False
     st.session_state.file_count = 0
+    st.session_state.history = []
     st.session_state.pending_question = None
+    st.session_state.show_explorer = False
+    st.session_state.demo_mode = False
 
 
-def load_and_index_repository(source):
-    repo_path = None
+def index_source(source, demo=False):
     workspace = None
 
     try:
@@ -448,16 +400,21 @@ def load_and_index_repository(source):
         st.session_state.chunks = chunks
         st.session_state.file_count = file_count
         st.session_state.indexed = True
-        st.session_state.repository_error = None
+        st.session_state.demo_mode = demo
+        st.session_state.selected_agent = "Architect"
 
     finally:
         if workspace is not None:
             cleanup_repository(workspace)
 
 
-def repository_name(source):
+def load_demo():
+    index_source(DEMO_REPOSITORY, demo=True)
+
+
+def get_repo_name(source):
     if not source:
-        return "Unknown repository"
+        return "Repository"
 
     cleaned = source.rstrip("/")
 
@@ -467,21 +424,21 @@ def repository_name(source):
     return cleaned.split("/")[-1]
 
 
-def metric_card(label, value, detail):
-    st.markdown(
-        f"""
-        <div class="metric-card">
-            <div class="metric-label">{label}</div>
-            <div class="metric-value">{value}</div>
-            <div class="metric-detail">{detail}</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+def get_language(source):
+    language = str(source.get("language", "")).lower()
+
+    if language in LANGUAGES:
+        return LANGUAGES[language]
+
+    extension = Path(
+        source.get("file_path", "")
+    ).suffix.lstrip(".").lower()
+
+    return LANGUAGES.get(extension, "text")
 
 
-def render_source(source):
-    source_id = source.get("source_id")
+def show_source(source):
+    source_id = source.get("source_id", "?")
     file_path = source.get("file_path", "Unknown")
     symbol = (
         source.get("qualified_name")
@@ -489,68 +446,177 @@ def render_source(source):
         or "Unknown"
     )
 
-    start_line = source.get("start_line", "?")
-    end_line = source.get("end_line", "?")
-
-    title = f"{file_path} · L{start_line}–{end_line}"
-
-    if source_id is not None:
-        title = f"[Source {source_id}] {title}"
+    start = source.get("start_line", "?")
+    end = source.get("end_line", "?")
+    content = source.get("content")
 
     with st.container(border=True):
-        st.markdown(f"**{title}**")
-        st.caption(f"Symbol: `{symbol}`")
+        st.markdown(
+            f"**[Source {source_id}] {file_path}**"
+        )
+
+        st.caption(
+            f"Symbol: {symbol} | Lines: {start}–{end}"
+        )
+
+        if content:
+            st.code(
+                content,
+                language=get_language(source),
+                line_numbers=True
+            )
+        else:
+            st.info(
+                "Source-code preview unavailable. "
+                "Regenerate the answer after updating the pipeline."
+            )
+
+        score = source.get("reranker_score")
+
+        if isinstance(score, (int, float)):
+            st.caption(
+                f"Reranker score: {score:.4f}"
+            )
 
 
-def render_answer(result, agent_name):
+def render_source_selector(sources, key):
+    if not sources:
+        st.info("No source-code evidence available.")
+        return
+
+    options = list(range(len(sources)))
+
+    selected = st.selectbox(
+        "Choose source code to inspect",
+        options=options,
+        format_func=lambda index: (
+            f"[Source {sources[index].get('source_id', '?')}] "
+            f"{sources[index].get('file_path', 'Unknown')} "
+            f"· L{sources[index].get('start_line', '?')}"
+            f"–{sources[index].get('end_line', '?')}"
+        ),
+        key=key
+    )
+
+    show_source(sources[selected])
+
+
+def render_answer(item, message_index):
+    agent_name = item.get("agent_name", "Assistant")
+
     st.caption(f"{agent_name} · Repository analysis")
-    st.markdown(result.get("answer", ""))
+    st.markdown(item.get("answer", ""))
 
-    validation = result.get("citation_validation", {})
-    cited_sources = result.get("cited_sources", [])
-    sources = result.get("sources", [])
+    validation = item.get("citation_validation", {})
+    sources = item.get("sources", [])
+    cited = item.get("cited_sources", [])
 
     if validation:
         invalid = validation.get("invalid_sources", [])
-        has_citations = validation.get("has_citations", False)
 
         if invalid:
             st.warning(
-                "Some citations refer to sources that were not retrieved: "
-                + ", ".join(str(value) for value in invalid)
+                "Some citations reference unavailable sources: "
+                + ", ".join(map(str, invalid))
             )
-        elif has_citations:
+        elif validation.get("has_citations"):
             st.caption(
-                "✓ Citation references match retrieved sources. "
+                "✓ Citation references match retrieved chunks. "
                 "Factual support is not independently verified."
             )
         else:
-            st.caption(
-                "No source citations were found in this response."
-            )
+            st.caption("No source citations detected.")
 
-    if cited_sources:
+    cited_ids = {
+        source.get("source_id")
+        for source in cited
+    }
+
+    cited_chunks = [
+        source for source in sources
+        if source.get("source_id") in cited_ids
+    ]
+
+    if cited_chunks:
         with st.expander(
-            f"Cited evidence · {len(cited_sources)} sources"
+            f"Cited source code ({len(cited_chunks)})"
         ):
-            for source in cited_sources:
-                render_source(source)
+            render_source_selector(
+                cited_chunks,
+                key=f"cited_selector_{message_index}"
+            )
 
     if sources:
         with st.expander(
-            f"All retrieved evidence · {len(sources)} chunks"
+            f"All retrieved chunks ({len(sources)})"
         ):
-            for source in sources:
-                render_source(source)
+            render_source_selector(
+                sources,
+                key=f"all_selector_{message_index}"
+            )
 
 
-def submit_question(question):
-    question = question.strip()
+def render_file_explorer():
+    chunks = st.session_state.chunks or []
 
-    if not question:
+    files = sorted({
+        chunk["metadata"].get("file_path", "")
+        for chunk in chunks
+        if chunk["metadata"].get("file_path")
+    })
+
+    if not files:
+        st.info("No indexed files available.")
         return
 
-    st.session_state.pending_question = question
+    selected_file = st.selectbox(
+        "Indexed source file",
+        files,
+        key="explorer_file"
+    )
+
+    file_chunks = [
+        chunk for chunk in chunks
+        if chunk["metadata"].get("file_path") == selected_file
+    ]
+
+    st.caption(
+        f"{len(file_chunks)} indexed chunks in {selected_file}"
+    )
+
+    options = list(range(len(file_chunks)))
+
+    selected_index = st.selectbox(
+        "Choose a code chunk",
+        options,
+        format_func=lambda index: (
+            file_chunks[index]["metadata"].get("qualified_name")
+            or file_chunks[index]["metadata"].get("symbol_name")
+            or f"Chunk {index + 1}"
+        ),
+        key="explorer_chunk"
+    )
+
+    chunk = file_chunks[selected_index]
+    metadata = chunk["metadata"]
+
+    source = {
+        "source_id": selected_index + 1,
+        "file_path": selected_file,
+        "symbol_name": metadata.get("symbol_name", ""),
+        "qualified_name": metadata.get("qualified_name", ""),
+        "start_line": metadata.get("start_line", "?"),
+        "end_line": metadata.get("end_line", "?"),
+        "language": metadata.get("language", ""),
+        "content": chunk.get("content", "")
+    }
+
+    show_source(source)
+
+
+def queue_question(question):
+    if question and question.strip():
+        st.session_state.pending_question = question.strip()
 
 
 initialize_state()
@@ -560,95 +626,152 @@ with st.sidebar:
     st.markdown(
         """
         <div class="brand">
-            <div class="brand-mark">◈</div>
+            <div class="brand-icon">◈</div>
             <div>
-                <div class="brand-name">Codebase AI</div>
-                <div class="brand-subtitle">Repository Intelligence</div>
+                <div class="brand-title">Codebase AI</div>
+                <div class="brand-subtitle">
+                    Repository Intelligence
+                </div>
             </div>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    st.markdown("---")
+    st.divider()
 
     st.markdown(
-        '<div class="workspace-label">Workspace</div>',
+        '<div class="section-label">Repository workspace</div>',
         unsafe_allow_html=True
     )
 
     source = st.text_input(
-        "Repository source",
+        "GitHub URL or local path",
+        value=st.session_state.repository or "",
         placeholder="https://github.com/owner/repo",
-        help="Enter a public GitHub URL or a local repository path.",
-        label_visibility="visible"
+        key="repository_input"
     )
 
     if st.button(
-        "↗  Connect Repository",
+        "Connect Repository",
         type="primary",
         use_container_width=True
     ):
         if not source.strip():
             st.warning("Enter a repository URL or local path.")
         else:
-            with st.spinner("Preparing and indexing repository..."):
+            with st.spinner("Indexing repository..."):
                 try:
-                    load_and_index_repository(source.strip())
+                    index_source(source.strip())
                     st.rerun()
                 except Exception as error:
                     st.error(f"Indexing failed: {error}")
 
+    st.markdown(
+        '<div class="section-label">Quick start</div>',
+        unsafe_allow_html=True
+    )
+
+    if st.button(
+        "Try Live Demo",
+        use_container_width=True
+    ):
+        with st.spinner(
+            "Loading demo repository and preparing AI agents..."
+        ):
+            try:
+                load_demo()
+                st.rerun()
+            except Exception as error:
+                st.error(f"Demo failed: {error}")
+
+    st.caption(
+        "No setup required. Explore a real open-source "
+        "Python repository."
+    )
+
     if st.session_state.indexed:
-        st.markdown(
-            """
-            <div class="status-pill">
-                <span class="status-dot"></span>
-                Repository connected
-            </div>
-            """,
-            unsafe_allow_html=True
+        st.write("")
+
+        if st.session_state.demo_mode:
+            st.markdown(
+                '<span class="demo-badge">◈ Demo Repository</span>',
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                '<span class="status">● Repository connected</span>',
+                unsafe_allow_html=True
+            )
+
+        name = get_repo_name(
+            st.session_state.repository
         )
 
         st.markdown(
             f"""
-            <div class="repository-box">
-                <div class="repository-name">
-                    {repository_name(st.session_state.repository)}
+            <div class="repo-panel">
+                <div class="repo-name">
+                    {html.escape(name)}
                 </div>
-                <div class="repository-path">
-                    {st.session_state.repository}
+                <div class="repo-url">
+                    {html.escape(st.session_state.repository)}
                 </div>
             </div>
             """,
             unsafe_allow_html=True
         )
 
-        col_files, col_chunks = st.columns(2)
+        col1, col2 = st.columns(2)
 
-        with col_files:
+        with col1:
             st.metric(
                 "Files",
                 st.session_state.file_count
             )
 
-        with col_chunks:
+        with col2:
             st.metric(
                 "Chunks",
                 len(st.session_state.chunks)
             )
 
+        if st.session_state.demo_mode:
+            if st.button(
+                "Reset Demo",
+                use_container_width=True
+            ):
+                st.session_state.history = []
+                st.session_state.selected_agent = "Architect"
+                st.rerun()
+
         if st.button(
-            "Disconnect Repository",
+            "Disconnect",
             use_container_width=True
         ):
             clear_repository()
             st.rerun()
 
-    st.markdown("---")
+        st.divider()
+
+        st.markdown(
+            '<div class="section-label">Developer tools</div>',
+            unsafe_allow_html=True
+        )
+
+        if st.button(
+            "Browse Indexed Files",
+            use_container_width=True
+        ):
+            st.session_state.show_explorer = (
+                not st.session_state.show_explorer
+            )
+            st.rerun()
+
+    st.divider()
 
     st.markdown(
-        '<div class="workspace-label">Conversation</div>',
+        '<div class="section-label">Conversation</div>',
         unsafe_allow_html=True
     )
 
@@ -664,182 +787,226 @@ with st.sidebar:
         st.session_state.history = []
         st.rerun()
 
-    st.markdown("---")
-
-    st.markdown(
-        '<div class="workspace-label">Technology</div>',
-        unsafe_allow_html=True
-    )
+    st.divider()
 
     st.caption(
         "Tree-sitter · ChromaDB · BM25 · "
-        "BGE Reranker · Gemini · Streamlit"
+        "BGE Reranker · Gemini"
     )
-
-
-st.markdown(
-    '<div class="eyebrow">AI-POWERED DEVELOPER WORKSPACE</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    """
-    <div class="hero-title">
-        Understand any codebase.<br>
-        <span class="hero-accent">Go beyond search.</span>
-    </div>
-    <div class="hero-description">
-        Connect a repository and explore its architecture,
-        uncover potential bugs, review implementations,
-        and generate technical documentation using
-        specialized AI agents grounded in source code.
-    </div>
-    """,
-    unsafe_allow_html=True
-)
 
 
 if not st.session_state.indexed:
-    st.info(
-        "Connect a GitHub repository or local project using "
-        "the sidebar to begin analyzing its code."
+    st.markdown(
+        '<div class="eyebrow">AI-POWERED DEVELOPER WORKSPACE</div>',
+        unsafe_allow_html=True
     )
-
-    st.markdown("### What you can explore")
-
-    cols = st.columns(4, gap="medium")
-
-    for col, (name, agent) in zip(cols, AGENTS.items()):
-        with col:
-            st.markdown(
-                f"""
-                <div class="agent-card">
-                    <div class="agent-icon">{agent['icon']}</div>
-                    <div class="agent-title">{name}</div>
-                    <div class="agent-description">
-                        {agent['description']}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
 
     st.markdown(
         """
-        <div class="footer-note">
-            AI Codebase Intelligence · Repository-aware
-            retrieval and multi-agent analysis
+        <div class="landing-title">
+            Understand any codebase.<br>
+            <span class="gradient-text">
+                Go beyond search.
+            </span>
+        </div>
+        <div class="muted">
+            Explore architecture, investigate bugs,
+            review implementations and generate documentation
+            using AI agents grounded in source code.
         </div>
         """,
         unsafe_allow_html=True
     )
 
+    st.markdown(
+        """
+        <div class="welcome-card">
+            <div class="eyebrow">INTERACTIVE DEMO</div>
+            <div class="welcome-title">
+                Experience repository-aware AI analysis
+            </div>
+            <div class="muted">
+                Explore a real open-source Python repository.
+                Choose an AI specialist, ask questions,
+                and inspect the exact source code behind
+                the answers.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    demo_col, repo_col = st.columns([1, 1])
+
+    with demo_col:
+        if st.button(
+            "Try Live Demo →",
+            type="primary",
+            use_container_width=True,
+            key="landing_demo"
+        ):
+            with st.spinner(
+                "Preparing demo repository..."
+            ):
+                try:
+                    load_demo()
+                    st.rerun()
+                except Exception as error:
+                    st.error(f"Demo failed: {error}")
+
+    with repo_col:
+        st.caption(
+            "Or connect your own repository using the sidebar."
+        )
+
+    st.write("")
+    st.markdown("### Meet your AI specialists")
+
+    cols = st.columns(4)
+
+    for col, (name, agent) in zip(cols, AGENTS.items()):
+        with col:
+            with st.container(border=True):
+                st.markdown(
+                    f"### {agent['icon']} {name}"
+                )
+                st.caption(agent["description"])
+
     st.stop()
 
 
-st.markdown(
-    """
-    <div class="status-pill">
-        <span class="status-dot"></span>
-        Workspace ready
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+header_left, header_right = st.columns([4, 1])
 
-st.write("")
-
-col1, col2, col3 = st.columns(3, gap="medium")
-
-with col1:
-    metric_card(
-        "SOURCE FILES",
-        st.session_state.file_count,
-        "Indexed and searchable"
+with header_left:
+    st.markdown(
+        '<div class="eyebrow">ACTIVE REPOSITORY</div>',
+        unsafe_allow_html=True
     )
 
-with col2:
-    metric_card(
-        "CODE CHUNKS",
-        len(st.session_state.chunks),
-        "Available for retrieval"
+    st.markdown(
+        f"""
+        <div class="workspace-title">
+            {html.escape(get_repo_name(st.session_state.repository))}
+        </div>
+        <div class="workspace-subtitle">
+            AI-assisted code exploration and analysis
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-with col3:
-    metric_card(
-        "AI SPECIALISTS",
-        len(AGENTS),
-        "Ready for analysis"
-    )
-
-
-st.write("")
-st.write("")
-
-st.markdown(
-    '<div class="section-heading">Choose your specialist</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    '<div class="section-subtitle">Select the kind of analysis you want to perform.</div>',
-    unsafe_allow_html=True
-)
-
-
-agent_cols = st.columns(4, gap="medium")
-
-for col, (name, agent) in zip(agent_cols, AGENTS.items()):
-    with col:
-        active = st.session_state.selected_agent == name
-
-        card_class = "agent-card active" if active else "agent-card"
-
+with header_right:
+    if st.session_state.demo_mode:
         st.markdown(
-            f"""
-            <div class="{card_class}">
-                <div class="agent-icon">{agent['icon']}</div>
-                <div class="agent-title">{name}</div>
-                <div class="agent-description">
-                    {agent['description']}
-                </div>
-            </div>
-            """,
+            '<span class="demo-badge">◈ Live Demo</span>',
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            '<span class="status">● Index ready</span>',
             unsafe_allow_html=True
         )
 
-        if st.button(
-            "Selected ✓" if active else "Select agent",
-            key=f"agent_{agent['id']}",
-            use_container_width=True,
-            type="primary" if active else "secondary"
-        ):
-            st.session_state.selected_agent = name
-            st.rerun()
+st.write("")
 
+col1, col2, col3 = st.columns(3)
 
-selected_name = st.session_state.selected_agent
-selected_agent = AGENTS[selected_name]
+with col1:
+    st.markdown(
+        f"""
+        <div class="stat-panel">
+            <div class="stat-number">
+                {st.session_state.file_count}
+            </div>
+            <div class="stat-label">Indexed files</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with col2:
+    st.markdown(
+        f"""
+        <div class="stat-panel">
+            <div class="stat-number">
+                {len(st.session_state.chunks)}
+            </div>
+            <div class="stat-label">Code chunks</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with col3:
+    st.markdown(
+        """
+        <div class="stat-panel">
+            <div class="stat-number">4</div>
+            <div class="stat-label">AI specialists</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 st.write("")
-st.divider()
 
-header_col, action_col = st.columns([4, 1])
+toolbar_left, toolbar_right = st.columns([3, 2])
 
-with header_col:
+with toolbar_left:
+    selected_name = st.selectbox(
+        "AI Specialist",
+        options=list(AGENTS.keys()),
+        key="selected_agent"
+    )
+
+with toolbar_right:
     st.markdown(
-        '<div class="section-heading">Ask your codebase</div>',
+        '<div class="section-label">Specialization</div>',
         unsafe_allow_html=True
     )
 
     st.caption(
-        f"{selected_name} is ready to analyze "
-        f"{repository_name(st.session_state.repository)}"
+        AGENTS[selected_name]["description"]
     )
 
-with action_col:
+agent_type = AGENTS[selected_name]["id"]
+
+st.divider()
+
+
+if st.session_state.show_explorer:
+    with st.container(border=True):
+        top_left, top_right = st.columns([4, 1])
+
+        with top_left:
+            st.subheader("Repository Explorer")
+
+        with top_right:
+            if st.button(
+                "Close Explorer",
+                use_container_width=True
+            ):
+                st.session_state.show_explorer = False
+                st.rerun()
+
+        render_file_explorer()
+
+    st.divider()
+
+
+chat_header, chat_action = st.columns([4, 1])
+
+with chat_header:
+    st.subheader("Repository Assistant")
+
+    st.caption(
+        f"Ask {selected_name} about "
+        f"{get_repo_name(st.session_state.repository)}"
+    )
+
+with chat_action:
     if st.button(
-        "New conversation",
+        "New Chat",
         use_container_width=True
     ):
         st.session_state.history = []
@@ -848,29 +1015,33 @@ with action_col:
 
 if not st.session_state.history:
     st.markdown(
-        '<div class="prompt-heading">SUGGESTED QUESTIONS</div>',
+        '<div class="section-label">Start with a question</div>',
         unsafe_allow_html=True
     )
 
-    for index, prompt in enumerate(selected_agent["prompts"]):
+    if st.session_state.demo_mode:
+        prompts = AGENTS[selected_name]["demo_prompts"]
+    else:
+        prompts = AGENTS[selected_name]["prompts"]
+
+    for index, prompt in enumerate(prompts):
         if st.button(
             f"↗  {prompt}",
-            key=f"suggested_{selected_agent['id']}_{index}",
+            key=f"prompt_{agent_type}_{index}",
             use_container_width=True
         ):
-            submit_question(prompt)
+            queue_question(prompt)
             st.rerun()
 
 
-for item in st.session_state.history:
+for message_index, item in enumerate(
+    st.session_state.history
+):
     with st.chat_message("user"):
         st.markdown(item["question"])
 
     with st.chat_message("assistant"):
-        render_answer(
-            item,
-            item.get("agent_name", item.get("agent", "Assistant"))
-        )
+        render_answer(item, message_index)
 
 
 question = st.chat_input(
@@ -878,7 +1049,7 @@ question = st.chat_input(
 )
 
 if question:
-    submit_question(question)
+    queue_question(question)
 
 
 if st.session_state.pending_question:
@@ -890,35 +1061,39 @@ if st.session_state.pending_question:
 
     with st.chat_message("assistant"):
         with st.spinner(
-            f"{selected_name} is analyzing repository evidence..."
+            f"{selected_name} is analyzing the codebase..."
         ):
             try:
                 result = route_question(
                     pending,
-                    selected_agent["id"],
+                    agent_type,
                     st.session_state.collection,
                     st.session_state.bm25,
                     st.session_state.chunks
                 )
 
-                render_answer(result, selected_name)
+            except Exception as error:
+                st.error(
+                    f"Analysis failed: {error}"
+                )
 
-                st.session_state.history.append({
+            else:
+                item = {
                     **result,
                     "question": pending,
                     "agent_name": selected_name
-                })
+                }
 
-            except Exception as error:
-                st.error(f"Analysis failed: {error}")
+                st.session_state.history.append(item)
+                st.rerun()
 
 
 st.markdown(
     """
-    <div class="footer-note">
-        Responses are generated from retrieved repository context.
-        Source references identify retrieved evidence but do not
-        independently guarantee factual correctness.
+    <div class="footer">
+        AI-generated repository analysis.
+        Source references identify retrieved code;
+        factual support is not independently verified.
     </div>
     """,
     unsafe_allow_html=True
