@@ -1,0 +1,58 @@
+[
+    {
+        "id": "Q01",
+        "category": "exact_symbol",
+        "query": "How does Signer.verify_signature work?",
+        "expected_file": "src/itsdangerous/signer.py",
+        "expected_symbol": "Signer.verify_signature"
+    },
+    {
+        "id": "Q02",
+        "category": "exact_symbol",
+        "query": "Explain Serializer.dumps",
+        "expected_file": "src/itsdangerous/serializer.py",
+        "expected_symbol": "Serializer.dumps"
+    },
+    {
+        "id": "Q03",
+        "category": "exact_symbol",
+        "query": "Where is the Signer class defined?",
+        "expected_file": "src/itsdangerous/signer.py",
+        "expected_symbol": "Signer"
+    },
+    {
+        "id": "Q04",
+        "category": "exact_symbol",
+        "query": "Where is the Serializer class defined?",
+        "expected_file": "src/itsdangerous/serializer.py",
+        "expected_symbol": "Serializer"
+    },
+    {
+        "id": "Q05",
+        "category": "natural_language",
+        "query": "Which method verifies a cryptographic signature?",
+        "expected_file": "src/itsdangerous/signer.py",
+        "expected_symbol": "Signer.verify_signature"
+    },
+    {
+        "id": "Q06",
+        "category": "natural_language",
+        "query": "How are Python objects serialized into signed strings?",
+        "expected_file": "src/itsdangerous/serializer.py",
+        "expected_symbol": "Serializer.dumps"
+    },
+    {
+        "id": "Q07",
+        "category": "natural_language",
+        "query": "Where does the library generate a signature for a value?",
+        "expected_file": "src/itsdangerous/signer.py",
+        "expected_symbol": "Signer.get_signature"
+    },
+    {
+        "id": "Q08",
+        "category": "natural_language",
+        "query": "Which method validates a signed value and returns the original data?",
+        "expected_file": "src/itsdangerous/signer.py",
+        "expected_symbol": "Signer.unsign"
+    }
+]

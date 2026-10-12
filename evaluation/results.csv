@@ -1,0 +1,41 @@
+id,category,query,method,rank,hit_at_5,reciprocal_rank,latency_ms
+Q01,exact_symbol,How does Signer.verify_signature work?,BM25,2,1,0.5,0.278
+Q01,exact_symbol,How does Signer.verify_signature work?,Dense,3,1,0.3333333333333333,14.524
+Q01,exact_symbol,How does Signer.verify_signature work?,Hybrid,2,1,0.5,14.835
+Q01,exact_symbol,How does Signer.verify_signature work?,Hybrid+Symbols,1,1,1.0,18.422
+Q01,exact_symbol,How does Signer.verify_signature work?,Hybrid+Symbols+SmartReranker,1,1,1.0,631.659
+Q02,exact_symbol,Explain Serializer.dumps,BM25,,0,0.0,0.172
+Q02,exact_symbol,Explain Serializer.dumps,Dense,5,1,0.2,17.502
+Q02,exact_symbol,Explain Serializer.dumps,Hybrid,,0,0.0,17.704
+Q02,exact_symbol,Explain Serializer.dumps,Hybrid+Symbols,5,1,0.2,20.83
+Q02,exact_symbol,Explain Serializer.dumps,Hybrid+Symbols+SmartReranker,1,1,1.0,606.873
+Q03,exact_symbol,Where is the Signer class defined?,BM25,,0,0.0,0.237
+Q03,exact_symbol,Where is the Signer class defined?,Dense,,0,0.0,9.536
+Q03,exact_symbol,Where is the Signer class defined?,Hybrid,4,1,0.25,9.807
+Q03,exact_symbol,Where is the Signer class defined?,Hybrid+Symbols,2,1,0.5,10.179
+Q03,exact_symbol,Where is the Signer class defined?,Hybrid+Symbols+SmartReranker,1,1,1.0,579.062
+Q04,exact_symbol,Where is the Serializer class defined?,BM25,3,1,0.3333333333333333,0.262
+Q04,exact_symbol,Where is the Serializer class defined?,Dense,,0,0.0,8.13
+Q04,exact_symbol,Where is the Serializer class defined?,Hybrid,1,1,1.0,8.419
+Q04,exact_symbol,Where is the Serializer class defined?,Hybrid+Symbols,1,1,1.0,8.806
+Q04,exact_symbol,Where is the Serializer class defined?,Hybrid+Symbols+SmartReranker,1,1,1.0,569.383
+Q05,natural_language,Which method verifies a cryptographic signature?,BM25,,0,0.0,0.257
+Q05,natural_language,Which method verifies a cryptographic signature?,Dense,,0,0.0,8.917
+Q05,natural_language,Which method verifies a cryptographic signature?,Hybrid,1,1,1.0,9.202
+Q05,natural_language,Which method verifies a cryptographic signature?,Hybrid+Symbols,3,1,0.3333333333333333,9.787
+Q05,natural_language,Which method verifies a cryptographic signature?,Hybrid+Symbols+SmartReranker,2,1,0.5,145.934
+Q06,natural_language,How are Python objects serialized into signed strings?,BM25,1,1,1.0,0.416
+Q06,natural_language,How are Python objects serialized into signed strings?,Dense,,0,0.0,12.4
+Q06,natural_language,How are Python objects serialized into signed strings?,Hybrid,1,1,1.0,12.861
+Q06,natural_language,How are Python objects serialized into signed strings?,Hybrid+Symbols,2,1,0.5,13.854
+Q06,natural_language,How are Python objects serialized into signed strings?,Hybrid+Symbols+SmartReranker,2,1,0.5,595.133
+Q07,natural_language,Where does the library generate a signature for a value?,BM25,,0,0.0,0.332
+Q07,natural_language,Where does the library generate a signature for a value?,Dense,2,1,0.5,9.355
+Q07,natural_language,Where does the library generate a signature for a value?,Hybrid,,0,0.0,9.72
+Q07,natural_language,Where does the library generate a signature for a value?,Hybrid+Symbols,5,1,0.2,10.686
+Q07,natural_language,Where does the library generate a signature for a value?,Hybrid+Symbols+SmartReranker,1,1,1.0,203.185
+Q08,natural_language,Which method validates a signed value and returns the original data?,BM25,,0,0.0,0.408
+Q08,natural_language,Which method validates a signed value and returns the original data?,Dense,4,1,0.25,10.317
+Q08,natural_language,Which method validates a signed value and returns the original data?,Hybrid,,0,0.0,10.759
+Q08,natural_language,Which method validates a signed value and returns the original data?,Hybrid+Symbols,,0,0.0,11.579
+Q08,natural_language,Which method validates a signed value and returns the original data?,Hybrid+Symbols+SmartReranker,,0,0.0,144.151

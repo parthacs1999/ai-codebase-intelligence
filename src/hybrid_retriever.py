@@ -2,7 +2,7 @@
 from vector_store import search
 from bm25_retriever import bm25_search
 from symbol_retriever import symbol_search
-from reranker import rerank
+from smart_reranker import smart_rerank
 
 
 def make_chunk_id(metadata):
@@ -22,10 +22,7 @@ def normalize_dense_results(results):
     ]
 
 
-def reciprocal_rank_fusion(
-    ranked_lists,
-    k=60
-):
+def reciprocal_rank_fusion(ranked_lists, k=60):
     scores = {}
     result_lookup = {}
 
@@ -72,7 +69,9 @@ def hybrid_search(
         top_k=candidate_limit
     )
 
-    dense_results = normalize_dense_results(dense_raw)
+    dense_results = normalize_dense_results(
+        dense_raw
+    )
 
     lexical_results = bm25_search(
         query,
@@ -98,8 +97,10 @@ def hybrid_search(
     if not candidates:
         return []
 
-    return rerank(
+    return smart_rerank(
         query,
         results=candidates,
-        top_k=min(top_k, len(candidates))
+        top_k=min(top_k, len(candidates)),
+        rerank_limit=10,
+        max_chars=2000
     )

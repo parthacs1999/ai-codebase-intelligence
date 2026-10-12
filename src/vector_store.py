@@ -11,7 +11,9 @@ client = chromadb.PersistentClient(path="./chroma_db")
 
 
 def get_collection():
-    return client.get_or_create_collection(name="code_chunks")
+    return client.get_or_create_collection(
+        name="code_chunks"
+    )
 
 
 def repository_collection_name(repository_id):
@@ -38,7 +40,9 @@ def reset_repository_collection(repository_id):
     else:
         client.delete_collection(name=name)
 
-    return client.get_or_create_collection(name=name)
+    return client.get_or_create_collection(
+        name=name
+    )
 
 
 def generate_embeddings(documents):
@@ -67,6 +71,11 @@ def chunk_id(chunk):
 def add_chunks(collection, chunks, batch_size=64):
     if not chunks:
         return 0
+
+    if batch_size <= 0:
+        raise ValueError(
+            "batch_size must be greater than zero"
+        )
 
     for start in range(0, len(chunks), batch_size):
         batch = chunks[start:start + batch_size]
@@ -100,7 +109,9 @@ def add_chunks(collection, chunks, batch_size=64):
 
 def search(collection, query, top_k=3):
     if top_k <= 0:
-        raise ValueError("top_k must be greater than zero")
+        raise ValueError(
+            "top_k must be greater than zero"
+        )
 
     count = collection.count()
 
@@ -117,7 +128,11 @@ def search(collection, query, top_k=3):
     return collection.query(
         query_embeddings=[query_embedding],
         n_results=min(top_k, count),
-        include=["documents", "metadatas", "distances"]
+        include=[
+            "documents",
+            "metadatas",
+            "distances"
+        ]
     )
 
 
