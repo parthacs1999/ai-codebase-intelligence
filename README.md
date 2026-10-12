@@ -13,7 +13,7 @@ The platform is being built to support both **local repositories and GitHub repo
 
 AI Codebase Intelligence lets developers explore GitHub and local repositories using natural-language questions. It combines hybrid code retrieval, intelligent reranking, and specialized AI agents to generate answers with source-code references.
 
-**[Live Demo — Coming Soon](#)** · [GitHub Repository](https://github.com/parthacs1999/ai-codebase-intelligence)
+**[Live Demo](https://ai-codebase-intelligent.streamlit.app/)** · [GitHub Repository](https://github.com/parthacs1999/ai-codebase-intelligence)
 
 ## Key Features
 
