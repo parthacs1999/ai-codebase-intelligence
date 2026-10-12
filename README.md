@@ -7,7 +7,99 @@ The platform is being built to support both **local repositories and GitHub repo
 > **Status:** Active development
 
 ---
+# AI Codebase Intelligence
 
+**A multi-agent RAG platform for understanding and analyzing software repositories.**
+
+AI Codebase Intelligence lets developers explore GitHub and local repositories using natural-language questions. It combines hybrid code retrieval, intelligent reranking, and specialized AI agents to generate answers with source-code references.
+
+**[Live Demo — Coming Soon](#)** · [GitHub Repository](https://github.com/parthacs1999/ai-codebase-intelligence)
+
+## Key Features
+
+- **Repository Analysis:** Index public GitHub repositories or local codebases.
+- **Hybrid Search:** Combine semantic search, BM25 keyword retrieval, and symbol-based search.
+- **Structure-Aware Chunking:** Parse source code using Tree-sitter while preserving function, class, and file metadata.
+- **Smart Reranking:** Prioritize relevant code snippets before sending context to Gemini.
+- **Source-Grounded Answers:** Display file paths, line ranges, citations, and retrieved source code.
+- **Interactive Demo:** Explore a sample open-source repository with one click.
+
+## Specialized AI Agents
+
+| Agent | Purpose |
+|---|---|
+| Architect | Explains system architecture, dependencies, and execution flow |
+| Code Reviewer | Reviews code quality, security, and maintainability |
+| Bug Finder | Investigates potential bugs, edge cases, and failure conditions |
+| Documentation | Explains APIs, classes, and functions |
+
+## How It Works
+
+```text
+GitHub URL / Local Repository
+             ↓
+    Tree-sitter Parsing
+             ↓
+   Code Chunking + Metadata
+             ↓
+  ChromaDB + BM25 + Symbols
+             ↓
+      Hybrid Retrieval
+             ↓
+       Smart Reranking
+             ↓
+     Specialized AI Agent
+             ↓
+      Gemini Generation
+             ↓
+  Answer + Source References
+```
+
+Rather than sending an entire repository to an LLM, the system retrieves and reranks relevant code chunks to provide focused context for generation.
+
+## Tech Stack
+
+**Python · Streamlit · Google Gemini · Tree-sitter · Sentence Transformers · ChromaDB · BM25 · Cross-Encoder Reranking · Git**
+
+## Getting Started
+
+```bash
+git clone https://github.com/parthacs1999/ai-codebase-intelligence.git
+cd ai-codebase-intelligence
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Create a `.env` file containing:
+
+```env
+GEMINI_API_KEY=your_api_key
+```
+
+Run the application:
+
+```bash
+streamlit run app.py --server.fileWatcherType none
+```
+
+Then connect a public GitHub repository, enter a local repository path, or select **Try Live Demo** to explore the application.
+
+## Evaluation
+
+Initial retrieval evaluation on the `itsdangerous` Python repository:
+
+| Metric | Result |
+|---|---|
+| Hit@5 | 87.5% |
+| Mean Reciprocal Rank (MRR) | 0.750 |
+| Evaluation questions | 8 |
+
+*Preliminary results from a small, single-repository evaluation; broader benchmarking is needed.*
+
+## Future Improvements
+
+Multi-user isolation, API rate limiting, persistent caching, and expanded retrieval evaluation.
 ## Project Goal
 
 Large software repositories can contain thousands of files and tens of thousands of lines of code. Sending an entire repository directly to an LLM is inefficient because of context-window limitations, latency, token usage, and irrelevant context.
